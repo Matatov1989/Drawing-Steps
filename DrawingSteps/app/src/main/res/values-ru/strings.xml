@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Ходули</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="strSnakeBar">Сделать скрин и отправить друзьям?</string>
+    <string name="btnSnakeBarYes">Да</string>
+</resources>
