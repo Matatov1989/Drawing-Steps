@@ -49,8 +49,6 @@ public class LocationDevice extends Service {
         Log.d(LOG_TAG, "onStartCommand: onCreate.");
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
-
-
         if (Build.VERSION.SDK_INT >= 26) {
             String CHANNEL_ID = "my_channel_01";
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID,

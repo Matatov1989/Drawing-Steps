@@ -1,6 +1,8 @@
 package com.sergeant_matatov.drawingsteps;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -13,7 +15,9 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
+import android.support.v4.app.ActivityCompat;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -22,32 +26,23 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+
 import static android.content.Context.LOCATION_SERVICE;
 
 /**
  * Created by Yurka on 11.10.2016.
  */
 
-public class PictureView extends View implements LocationListener {
+public class PictureView extends View {
 
     final String LOG_TAG = "myLogs";
 
     PictureView view;
-    // flag for GPS status
-    boolean isGPSEnabled = false;
-
-    // flag for network status
-    boolean isNetworkEnabled = false;
-
-    // flag for GPS status
-    boolean canGetLocation = false;
-
-    Location location;      // location
-    public LocationListener locationListener;   //для работы GPS
-    String msg;
-
-    // Declaring a Location Manager
-    protected LocationManager locationManager;
 
     private Bitmap mBitmap;
     private Canvas mCanvas;
@@ -61,14 +56,16 @@ public class PictureView extends View implements LocationListener {
 
     private final GestureDetector detector;
 
-
     private boolean isLock = false;
 
-    int pointX, pointY;
     int pointX1, pointY1;
+    int pointX2, pointY2;
+
+    double locationFirstX = 0.0, locationFirstY = 0.0;
+    double locationSecondX = 0.0, locationSecondY = 0.0;
+
     double pointResX = 0.0, pointResY = 0.0;
-    double pointFirstX = 0.0, pointFirstY = 0.0;
-    double pointLastX = 0, pointLastY = 0;
+
 
     int resX;
     int resY;
@@ -140,6 +137,28 @@ public class PictureView extends View implements LocationListener {
         Log.d(LOG_TAG, "lat = " + lat);
         Log.d(LOG_TAG, "lon = " + lon);
 
+
+
+       if (locationFirstX == 0 && locationFirstY == 0){
+           locationFirstX = lat;
+           locationFirstY = lon;
+
+           locationSecondX = lat;
+           locationSecondY = lon;
+           mCanvas.drawPoint(pointX1, pointY1, paint);
+       }
+       else {
+
+           locationFirstX = lat;
+           locationFirstY = lon;
+
+           getDirection();
+
+       }
+
+
+
+      /*
         if (pointFirstX == 0 && pointFirstY == 0) {
             pointFirstX = lat;
             pointFirstY = lon;
@@ -203,112 +222,77 @@ public class PictureView extends View implements LocationListener {
             pointY = pointY1;
 
         }
-
+*/
         invalidate();//перерисовываем канвас
     }
 
-    public void pictureStart() {
-        Log.d(LOG_TAG, "picture");
+    private int getDirection(){
 
-        try {
-            locationManager = (LocationManager) getContext().getSystemService(LOCATION_SERVICE);
+        if (locationFirstX <= locationSecondX){
 
-            // getting GPS status
-            isGPSEnabled = locationManager.isProviderEnabled(locationManager.GPS_PROVIDER);
-
-            // getting network status
-            isNetworkEnabled = locationManager.isProviderEnabled(locationManager.NETWORK_PROVIDER);
-
-            if (!isGPSEnabled && !isNetworkEnabled)
-                msg = "error";
-            else {
-                this.canGetLocation = true;
-
-                // if GPS Enabled get lat/long using GPS Services
-                if (isGPSEnabled) {
-                    Log.d(LOG_TAG, "gps");
-                    locationManager.requestLocationUpdates(locationManager.GPS_PROVIDER, 1000, 0, this);
-
-                    if (locationManager != null) {
-                        location = locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER);
-                        if (location != null)
-                            this.onLocationChanged(location);
-           //                 onLocationChanged(location);
-
-                    }
-                }
-                // First get location from Network Provider
-                else if (isNetworkEnabled) {
-                    Log.d(LOG_TAG, "net");
-                    locationManager.requestLocationUpdates(locationManager.NETWORK_PROVIDER, 1000, 0, this);
-                    if (locationManager != null) {
-                        location = locationManager.getLastKnownLocation(locationManager.NETWORK_PROVIDER);
-                        if (location != null)
-                            this.onLocationChanged(location);
-                //            onLocationChanged(location);
-              //              drawSteps(location.getLatitude(), location.getLongitude());
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
+        else  if (locationFirstX >= locationSecondX){
+
+        }
+
+        if (locationFirstY <= locationSecondY){
+
+        }
+        else  if (locationFirstY >= locationSecondY){
+
+        }
+
+        return 0;
     }
 
 
-    public void getCoordinates() {
-        try {
-            locationManager = (LocationManager) getContext().getSystemService(LOCATION_SERVICE);
-            // getting GPS status
-            isGPSEnabled = locationManager.isProviderEnabled(locationManager.GPS_PROVIDER);
-            // getting network status
-            isNetworkEnabled = locationManager.isProviderEnabled(locationManager.NETWORK_PROVIDER);
+    private FusedLocationProviderClient mFusedLocationClient;
+    private final static long UPDATE_INTERVAL = 4 * 1000;  /* 4 secs */
+    private final static long FASTEST_INTERVAL = 2000; /* 2 sec */
 
-            if (!isGPSEnabled && !isNetworkEnabled) {
-                msg = "error";
+    public void getLocation() {
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(getContext());
+        // ---------------------------------- LocationRequest ------------------------------------
+        // Create the location request to start receiving updates
+        LocationRequest mLocationRequestHighAccuracy = new LocationRequest();
+        mLocationRequestHighAccuracy.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        mLocationRequestHighAccuracy.setInterval(UPDATE_INTERVAL);
+        mLocationRequestHighAccuracy.setFastestInterval(FASTEST_INTERVAL);
 
-            } else if (isGPSEnabled && isNetworkEnabled)
-            {
-                if (isGPSEnabled) {
-                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 0, locationListener);
-                    if (locationManager != null) {
-                        location = locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER);
-                        locationListener.onLocationChanged(location);
-                    }
-                } else if (isNetworkEnabled) {
-                    locationManager.requestLocationUpdates(locationManager.NETWORK_PROVIDER, 2000, 0, locationListener);
-                    if (locationManager != null) {
-                        location = locationManager.getLastKnownLocation(locationManager.NETWORK_PROVIDER);
-                        locationListener.onLocationChanged(location);
-                    }
-                } else {
-                    msg = "error";
-                }
-            } else if (isGPSEnabled) {
-                locationManager.requestLocationUpdates(locationManager.GPS_PROVIDER, 2000, 0, locationListener);
-                if (locationManager != null) {
-                    location = locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER);
-                    locationListener.onLocationChanged(location);
-                } else {
-                    locationListener.onProviderDisabled(location.getProvider());
-                }
-            } else if (isNetworkEnabled) {
-                locationManager.requestLocationUpdates(locationManager.NETWORK_PROVIDER, 2000, 0, locationListener);
-                if (locationManager != null) {
-                    location = locationManager.getLastKnownLocation(locationManager.NETWORK_PROVIDER);
-                    locationListener.onLocationChanged(location);
-                } else
-                    locationListener.onProviderDisabled(location.getProvider());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+
+        // new Google API SDK v11 uses getFusedLocationProviderClient(this)
+        if (ActivityCompat.checkSelfPermission(getContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            Log.d(LOG_TAG, "getLocation: stopping the location service.");
+
+            return;
         }
- //       locationManager.removeUpdates(locationListener);
+        Log.d(LOG_TAG, "getLocation: getting location information.");
+        mFusedLocationClient.requestLocationUpdates(mLocationRequestHighAccuracy, new LocationCallback() {
+                    @Override
+                    public void onLocationResult(LocationResult locationResult) {
+
+                        Log.d(LOG_TAG, "onLocationResult: got location result.");
+
+                        Location location = locationResult.getLastLocation();
+
+                        if (location != null) {
+
+                            Log.d(LOG_TAG, " get latitude:  " + location.getLatitude());
+                            Log.d(LOG_TAG, "get longitude:  " + location.getLongitude());
+
+                            drawSteps(location.getLatitude(), location.getLongitude());
+                        }
+                    }
+                },
+                Looper.myLooper()); // Looper.myLooper tells this to repeat forever until thread is destroyed
     }
+
+
 
     public void pictureStop() {
         Log.d(LOG_TAG, "************stop");
-        locationManager.removeUpdates(this);
+   //     locationManager.removeUpdates(this);
     }
 
 
@@ -329,28 +313,6 @@ public class PictureView extends View implements LocationListener {
 
     public void unlock() {
         isLock = false;
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        Log.d(LOG_TAG, "************onLocationChanged");
-        if (location != null)
-            drawSteps(location.getLatitude(), location.getLongitude());
-    }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-        Log.d(LOG_TAG, "onStatusChanged");
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-        Log.d(LOG_TAG, "onProviderEnabled");
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-        Log.d(LOG_TAG, "onProviderDisabled");
     }
 
     //унаследовались от ScaleGestureDetector.SimpleOnScaleGestureListener, чтобы не писать пустую реализацию ненужных методов интерфейса OnScaleGestureListener

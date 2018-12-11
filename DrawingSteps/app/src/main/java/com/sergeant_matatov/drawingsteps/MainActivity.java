@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
 
                 if (!checkEnable) {
 
-                    picView.pictureStart();
+                    picView.getLocation();
                     fabBtnStartStop.setImageResource(android.R.drawable.ic_media_pause);
                     checkEnable = true;
                 } else {
