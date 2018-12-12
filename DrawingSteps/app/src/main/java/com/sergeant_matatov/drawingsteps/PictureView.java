@@ -6,24 +6,13 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.Bundle;
-import android.os.Handler;
 import android.os.Looper;
-import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.GestureDetector;
-import android.view.MotionEvent;
-import android.view.ScaleGestureDetector;
 import android.view.View;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -31,8 +20,6 @@ import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
-
-import static android.content.Context.LOCATION_SERVICE;
 
 /**
  * Created by Yurka on 11.10.2016.
@@ -42,6 +29,11 @@ public class PictureView extends View {
 
     final String LOG_TAG = "myLogs";
 
+    LocationCallback locationCallback;
+    private FusedLocationProviderClient mFusedLocationClient;
+    private final static long UPDATE_INTERVAL = 4 * 1000;  /* 4 secs */
+    private final static long FASTEST_INTERVAL = 2 * 1000; /* 2 sec */
+
     PictureView view;
 
     private Bitmap mBitmap;
@@ -50,54 +42,35 @@ public class PictureView extends View {
     private float canvasSize;
     private final int horizontalCountOfCells, verticalCountOfCells;
 
-    private final ScaleGestureDetector scaleGestureDetector;
     private final int viewSize;
     private float mScaleFactor;
 
-    private final GestureDetector detector;
-
-    private boolean isLock = false;
-
-    int pointX1, pointY1;
-    int pointX2, pointY2;
+    int pointX, pointY;
+    int pointResX = 0, pointResY = 0;
 
     double locationFirstX = 0.0, locationFirstY = 0.0;
     double locationSecondX = 0.0, locationSecondY = 0.0;
-
-    double pointResX = 0.0, pointResY = 0.0;
-
-
-    int resX;
-    int resY;
-
-    String strResX;
-    String strResY;
-
 
     public PictureView(Context context, AttributeSet attrs) {
         super(context, attrs);
 
         DisplayMetrics displaymetrics = getResources().getDisplayMetrics();
 
-        //    pointX = displaymetrics.widthPixels / 2;
-        //    pointY = displaymetrics.heightPixels / 2;
-
-        //размер игрового поля
+        //size of margin
         horizontalCountOfCells = 10;
         verticalCountOfCells = 10;
-        //в xml разметке позднее пропишем размер вьюхи равный 300dp
         viewSize = (int) convertDpToPixel(displaymetrics.heightPixels, context);
-        mScaleFactor = 1f;//значение зума по умолчанию
-        canvasSize = (int) (viewSize * mScaleFactor);//определяем размер канваса
+        mScaleFactor = 1f;                              //default zoom
+        canvasSize = (int) (viewSize * mScaleFactor);   //size of canvas
 
-        //вытаскиваем размер экрана
+        //get size display
         screenSizeDisplay();
 
         mBitmap = Bitmap.createBitmap((int) canvasSize, (int) canvasSize, Bitmap.Config.ARGB_8888);
         mCanvas = new Canvas(mBitmap);
         mBitmapPaint = new Paint(Paint.DITHER_FLAG);
 
-        //определяем параметры кисти, которой будем рисовать сетку и атомы
+        //set parameterts to brush
         paint = new Paint();
         paint.setAntiAlias(true);
         paint.setDither(true);
@@ -106,13 +79,7 @@ public class PictureView extends View {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeJoin(Paint.Join.ROUND);
         paint.setStrokeCap(Paint.Cap.ROUND);
-
-        scaleGestureDetector = new ScaleGestureDetector(context, new MyScaleGestureListener());
-
-        detector = new GestureDetector(context, new MyGestureListener());
-
     }
-
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -122,135 +89,145 @@ public class PictureView extends View {
         canvas.restore();
     }
 
-
-    public String formatDoubleNum(double num1, double num2) {
-        Log.d(LOG_TAG, "num1 = " + num1);
-        Log.d(LOG_TAG, "num2 = " + num2);
-        String str = String.format("%1$.7f", (num1 - num2));
-        Log.d(LOG_TAG, "format = " + str);
-
-        return String.format("%1$.7f", (num1 - num2));
-    }
-
     public void drawSteps(double lat, double lon) {
-        Log.d(LOG_TAG, "drawSteps");
+        Log.d(LOG_TAG, "---drawSteps---");
         Log.d(LOG_TAG, "lat = " + lat);
         Log.d(LOG_TAG, "lon = " + lon);
 
+        ///9 4 6
+        ///2 1 3
+        ///8 5 7
+        if (locationFirstX == 0 && locationFirstY == 0) {
+            locationFirstX = lat;
+            locationFirstY = lon;
 
-
-       if (locationFirstX == 0 && locationFirstY == 0){
-           locationFirstX = lat;
-           locationFirstY = lon;
-
-           locationSecondX = lat;
-           locationSecondY = lon;
-           mCanvas.drawPoint(pointX1, pointY1, paint);
-       }
-       else {
-
-           locationFirstX = lat;
-           locationFirstY = lon;
-
-           getDirection();
-
-       }
-
-
-
-      /*
-        if (pointFirstX == 0 && pointFirstY == 0) {
-            pointFirstX = lat;
-            pointFirstY = lon;
-            Log.d(LOG_TAG, "if pointFirstX " + pointFirstX);
-            mCanvas.drawPoint(pointX, pointY, paint);
-
+            locationSecondX = lat;
+            locationSecondY = lon;
+            mCanvas.drawPoint(pointResX, pointResY, paint);
         } else {
-            strResX = formatDoubleNum(pointFirstX, lat);
-            strResY = formatDoubleNum(pointFirstY, lon);
-            //     Log.d(LOG_TAG, "***** 2 point rex else pointResX " + strResX + " len " + strResX.length());
-            //x
-            int start = 0;
-            int end = strResX.length();
-            char[] buf = new char[strResX.length()];
-            strResX.getChars(start, end, buf, 0);
 
-            String strTemp = buf[strResX.length() - 2] + "" + buf[strResX.length() - 1];
-            resX = Integer.parseInt(strTemp);
+            locationFirstX = lat;
+            locationFirstY = lon;
 
-            //y
-            start = 0;
-            end = strResY.length();
-            buf = new char[strResY.length()];
-            strResY.getChars(start, end, buf, 0);
+            switch (getDirection()){
+                case 1:
+                    pointResX = pointX;
+                    pointResY = pointY;
+                    break;
 
+                case 2:
+                    pointResX -= 2;
+                    break;
 
-            strTemp = buf[strResY.length() - 2] + "" + buf[strResY.length() - 1];
-            resY = Integer.parseInt(strTemp);
+                case 3:
+                    pointResX += 2;
+                    break;
 
-            Log.d(LOG_TAG, "resX = " + resX);
-            Log.d(LOG_TAG, "resY = " + resY);
-            if (resX >= 6) {
-                if (strResX.contains("-")) {
-                    pointX1 = pointX - 2;
-                } else {
-                    pointX1 = pointX + 2;
-                }
-                pointFirstX = lat;
-            } else {
-                pointX1 = pointX;
-                pointFirstX = pointFirstX;
+                case 4:
+                    pointResY -= 2;
+                    break;
+
+                case 5:
+                    pointResY += 2;
+                    break;
+
+                case 6:
+                    pointResX += 2;
+                    pointResY -= 2;
+                    break;
+
+                case 7:
+                    pointResX += 2;
+                    pointResY += 2;
+                    break;
+
+                case 8:
+                    pointResX -= 2;
+                    pointResY += 2;
+                    break;
+
+                case 9:
+                    pointResX -= 2;
+                    pointResY -= 2;
+                    break;
             }
 
-
-            if (resY >= 6) {
-                if (strResY.contains("-")) {
-                    pointY1 = pointY - 2;
-                } else {
-                    pointY1 = pointY + 2;
-                }
-                pointFirstY = lon;
-            } else {
-                pointY1 = pointY;
-                pointFirstY = pointFirstY;
-            }
-
-            //    Log.d(LOG_TAG, "v lat = "+lat+" lon = "+lon);
-            // рисуем линию
-            mCanvas.drawLine(pointX, pointY, pointX1, pointY1, paint);
-            pointX = pointX1;
-            pointY = pointY1;
+            locationSecondX = lat;
+            locationSecondY = lon;
+            mCanvas.drawPoint(pointResX, pointResY, paint);
 
         }
-*/
+
         invalidate();//перерисовываем канвас
     }
 
-    private int getDirection(){
+    private int getDirection() {
 
-        if (locationFirstX <= locationSecondX){
+        int dirVertical = 0;
+        int dirHorizontal = 0;
 
+
+
+        Log.d(LOG_TAG, "=== Direction ===");
+        if (locationFirstX < locationSecondX) {
+            Log.d(LOG_TAG, "left");
+            dirVertical = 2;
+        } else if (locationFirstX > locationSecondX) {
+            Log.d(LOG_TAG, "rigth");
+            dirVertical = 3;
+        } else {
+            Log.d(LOG_TAG, "0 horizont");
+            dirVertical = 0;
         }
-        else  if (locationFirstX >= locationSecondX){
 
+        if (locationFirstY < locationSecondY) {
+            Log.d(LOG_TAG, "up");
+            dirHorizontal = 4;
+        } else if (locationFirstY > locationSecondY) {
+            Log.d(LOG_TAG, "down");
+            dirHorizontal = 5;
+        } else {
+            Log.d(LOG_TAG, "0 vertical");
+            dirHorizontal = 0;
         }
 
-        if (locationFirstY <= locationSecondY){
-
+        if (dirVertical == 0 && dirHorizontal == 0){
+            return 1;
         }
-        else  if (locationFirstY >= locationSecondY){
-
+        else
+        {
+            if (dirVertical == 2 && dirHorizontal == 4){
+                return 9;
+            }
+            else if (dirVertical == 2 && dirHorizontal == 5){
+                return 8;
+            }
+            else if (dirVertical == 2 && dirHorizontal == 0)
+            {
+                return 2;
+            }
+            else if (dirVertical == 0 && dirHorizontal == 4)
+            {
+                return 4;
+            }
+            else if (dirVertical == 3 && dirHorizontal == 4){
+                return 6;
+            }
+            else if (dirVertical == 3 && dirHorizontal == 5){
+                return 7;
+            }
+            else if (dirVertical == 3 && dirHorizontal == 0){
+                return 3;
+            }
+            else if (dirVertical == 0 && dirHorizontal == 5){
+                return 5;
+            }
         }
-
         return 0;
     }
 
-
-    private FusedLocationProviderClient mFusedLocationClient;
-    private final static long UPDATE_INTERVAL = 4 * 1000;  /* 4 secs */
-    private final static long FASTEST_INTERVAL = 2000; /* 2 sec */
-
     public void getLocation() {
+
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(getContext());
         // ---------------------------------- LocationRequest ------------------------------------
         // Create the location request to start receiving updates
@@ -268,11 +245,11 @@ public class PictureView extends View {
             return;
         }
         Log.d(LOG_TAG, "getLocation: getting location information.");
-        mFusedLocationClient.requestLocationUpdates(mLocationRequestHighAccuracy, new LocationCallback() {
+        mFusedLocationClient.requestLocationUpdates(mLocationRequestHighAccuracy,locationCallback = new LocationCallback() {
                     @Override
                     public void onLocationResult(LocationResult locationResult) {
 
-                        Log.d(LOG_TAG, "onLocationResult: got location result.");
+                        Log.d(LOG_TAG, "=== Location ===");
 
                         Location location = locationResult.getLastLocation();
 
@@ -285,16 +262,14 @@ public class PictureView extends View {
                         }
                     }
                 },
-                Looper.myLooper()); // Looper.myLooper tells this to repeat forever until thread is destroyed
+                Looper.myLooper());     // Looper.myLooper tells this to repeat forever until thread is destroyed
     }
-
 
 
     public void pictureStop() {
         Log.d(LOG_TAG, "************stop");
-   //     locationManager.removeUpdates(this);
+        mFusedLocationClient.removeLocationUpdates(locationCallback);
     }
-
 
     //переводим dp в пиксели
     public float convertDpToPixel(float dp, Context context) {
@@ -302,92 +277,6 @@ public class PictureView extends View {
         DisplayMetrics metrics = resources.getDisplayMetrics();
         return dp * (metrics.densityDpi / 160f);
     }
-
-    public boolean isLock() {
-        return isLock;
-    }
-
-    public void lock() {
-        isLock = true;
-    }
-
-    public void unlock() {
-        isLock = false;
-    }
-
-    //унаследовались от ScaleGestureDetector.SimpleOnScaleGestureListener, чтобы не писать пустую реализацию ненужных методов интерфейса OnScaleGestureListener
-    private class MyScaleGestureListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
-        //обрабатываем "щипок" пальцами
-        @Override
-        public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
-            float scaleFactor = scaleGestureDetector.getScaleFactor();//получаем значение зума относительно предыдущего состояния
-            //получаем координаты фокальной точки - точки между пальцами
-            float focusX = scaleGestureDetector.getFocusX();
-            float focusY = scaleGestureDetector.getFocusY();
-            //следим чтобы канвас не уменьшили меньше исходного размера и не допускаем увеличения больше чем в 2 раза
-            if (mScaleFactor * scaleFactor > 1 && mScaleFactor * scaleFactor < 2) {
-                mScaleFactor *= scaleGestureDetector.getScaleFactor();
-                canvasSize = viewSize * mScaleFactor;//изменяем хранимое в памяти значение размера канваса
-                //используется при расчетах
-                //по умолчанию после зума канвас отскролит в левый верхний угол. Скролим канвас так, чтобы на экране оставалась обасть канваса, над которой был
-                //жест зума
-                //Для получения данной формулы достаточно школьных знаний математики (декартовы координаты).
-                int scrollX = (int) ((getScrollX() + focusX) * scaleFactor - focusX);
-                scrollX = Math.min(Math.max(scrollX, 0), (int) canvasSize - viewSize);
-                int scrollY = (int) ((getScrollY() + focusY) * scaleFactor - focusY);
-                scrollY = Math.min(Math.max(scrollY, 0), (int) canvasSize - viewSize);
-                scrollTo(scrollX, scrollY);
-            }
-            //вызываем перерисовку принудительно
-            invalidate();
-            return true;
-        }
-    }
-
-    //унаследовались от GestureDetector.SimpleOnGestureListener, чтобы не писать пустую
-    //реализацию ненужных методов интерфейса OnGestureListener
-    private class MyGestureListener extends GestureDetector.SimpleOnGestureListener {
-        //обрабатываем скролл (перемещение пальца по экрану)
-        @Override
-        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            //не даем канвасу показать края по горизонтали
-            if (getScrollX() + distanceX < canvasSize - viewSize && getScrollX() + distanceX > 0) {
-                scrollBy((int) distanceX, 0);
-            }
-            //не даем канвасу показать края по вертикали
-            if (getScrollY() + distanceY < canvasSize - viewSize && getScrollY() + distanceY > 0) {
-                scrollBy(0, (int) distanceY);
-            }
-            return true;
-        }
-
-        //обрабатываем одиночный тап
-        @Override
-        public boolean onSingleTapConfirmed(MotionEvent event) {
-            if (isLock) return true;
-            //получаем координаты ячейки, по которой тапнули
-            float eventX = (event.getX() + getScrollX()) / mScaleFactor;
-            float eventY = (event.getY() + getScrollY()) / mScaleFactor;
-            //        logic.addAtom((int)(horizontalCountOfCells *eventX/viewSize), (int)(verticalCountOfCells *eventY/viewSize));
-            return true;
-        }
-
-        //обрабатываем двойной тап
-        @Override
-        public boolean onDoubleTapEvent(MotionEvent event) {
-            //зумируем канвас к первоначальному виду
-            mScaleFactor = 1f;
-            canvasSize = viewSize;
-            scrollTo(0, 0);//скролим, чтобы не было видно краев канваса.
-            invalidate();//перерисовываем канвас
-            return true;
-        }
-    }
-/*
-    public void setLogic(GameLogic logic) {
-        this.logic = logic;
-    }
-*/
 
     // Узнаем размеры экрана из ресурсов
     public void screenSizeDisplay() {
@@ -399,6 +288,13 @@ public class PictureView extends View {
 
         Log.d(LOG_TAG, "size w = " + displaymetrics.widthPixels);
         Log.d(LOG_TAG, "size h = " + displaymetrics.heightPixels);
+
+        pointResX = pointX;
+        pointResY = pointY;
+
+
+        Log.d(LOG_TAG, "pointX1 = " + pointX);
+        Log.d(LOG_TAG, "pointY1 = " + pointY);
 
     }
 }

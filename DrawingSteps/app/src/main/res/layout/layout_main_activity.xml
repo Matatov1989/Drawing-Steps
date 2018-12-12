@@ -5,26 +5,32 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
+
     tools:context="com.sergeant_matatov.drawingsteps.MainActivity">
 
 
-    <!--
         <android.support.design.widget.AppBarLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:theme="@style/AppTheme.arOverlay">
+            android:theme="@style/AppTheme.AppBarOverlay">
+
+
+            <com.sergeant_matatov.drawingsteps.StatusBarView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/gradient_status_bar" />
+
 
             <android.support.v7.widget.Toolbar
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                android:background="?attr/colorPrimary"
+                android:background="?attr/colorPrimaryDark"
                 app:popupTheme="@style/AppTheme.PopupOverlay" />
 
 
         </android.support.design.widget.AppBarLayout>
-        -->
+
 
     <include layout="@layout/content_main"
         android:layout_width="match_parent"
@@ -41,3 +47,6 @@
 
 
 </android.support.design.widget.CoordinatorLayout>
+
+
+    <!--android:fitsSystemWindows="true"-->

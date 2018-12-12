@@ -6,4 +6,18 @@
 
     <string name="strSnakeBar">Сделать скрин и отправить друзьям?</string>
     <string name="btnSnakeBarYes">Да</string>
+
+    <string name="actionBtnDevelopers">Разработчики</string>
+    <string name="actionBtnFromDeveloper">Ещё от разработчиков</string>
+    <string name="actionBtnAdviseFriend">Посоветовать друзьям</string>
+    <string name="actionBtnFeedback">Оставить отзыв</string>
+    <string name="actionBtnPrivacyPolicy">Политика Конфиденциальности</string>
+
+    <string name="toastSendMail">Сообщение отправлено.</string>
+
+    <array name="arrWorkers">
+        <item>Разработчик Мататов Юрий</item>
+        <item>Дизайнер Мататов Никита</item>
+    </array>
+
 </resources>

@@ -4,4 +4,18 @@
 
     <string name="strSnakeBar">Make a screenshot and send to your friends?</string>
     <string name="btnSnakeBarYes">Yes</string>
+
+    <string name="actionBtnDevelopers">Developers</string>
+    <string name="actionBtnFromDeveloper">More from developer</string>
+    <string name="actionBtnAdviseFriend">Advise a friend</string>
+    <string name="actionBtnFeedback">Feedback</string>
+    <string name="actionBtnPrivacyPolicy">Privacy Policy</string>
+
+    <string name="toastSendMail">Message sent.</string>
+
+    <array name="arrWorkers">
+        <item>Developer Matatov Yury</item>
+        <item>Designer Matatov Nikita</item>
+    </array>
+
 </resources>
