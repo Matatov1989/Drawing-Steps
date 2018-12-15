@@ -12,7 +12,6 @@ import android.os.Looper;
 import android.support.v4.app.ActivityCompat;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.View;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -27,12 +26,10 @@ import com.google.android.gms.location.LocationServices;
 
 public class PictureView extends View {
 
-    final String LOG_TAG = "myLogs";
-
     LocationCallback locationCallback;
     private FusedLocationProviderClient mFusedLocationClient;
-    private final static long UPDATE_INTERVAL = 4 * 1000;  /* 4 secs */
-    private final static long FASTEST_INTERVAL = 2 * 1000; /* 2 sec */
+    private final static long UPDATE_INTERVAL = 4 * 1000;  // 4 secs
+    private final static long FASTEST_INTERVAL = 2 * 1000; // 2 secs
 
     PictureView view;
 
@@ -90,10 +87,6 @@ public class PictureView extends View {
     }
 
     public void drawSteps(double lat, double lon) {
-        Log.d(LOG_TAG, "---drawSteps---");
-        Log.d(LOG_TAG, "lat = " + lat);
-        Log.d(LOG_TAG, "lon = " + lon);
-
         ///9 4 6
         ///2 1 3
         ///8 5 7
@@ -109,44 +102,44 @@ public class PictureView extends View {
             locationFirstX = lat;
             locationFirstY = lon;
 
-            switch (getDirection()){
-                case 1:
+            switch (getDirection()) {
+                case 1:     //in place
                     pointResX = pointX;
                     pointResY = pointY;
                     break;
 
-                case 2:
+                case 2:     //only left
                     pointResX -= 2;
                     break;
 
-                case 3:
+                case 3:     //only right
                     pointResX += 2;
                     break;
 
-                case 4:
+                case 4:     //only up
                     pointResY -= 2;
                     break;
 
-                case 5:
+                case 5:     //only down
                     pointResY += 2;
                     break;
 
-                case 6:
+                case 6:     //up and right
                     pointResX += 2;
                     pointResY -= 2;
                     break;
 
-                case 7:
+                case 7:     //down and right
                     pointResX += 2;
                     pointResY += 2;
                     break;
 
-                case 8:
+                case 8:     //down and left
                     pointResX -= 2;
                     pointResY += 2;
                     break;
 
-                case 9:
+                case 9:     //up and left
                     pointResX -= 2;
                     pointResY -= 2;
                     break;
@@ -155,77 +148,56 @@ public class PictureView extends View {
             locationSecondX = lat;
             locationSecondY = lon;
             mCanvas.drawPoint(pointResX, pointResY, paint);
-
         }
-
-        invalidate();//перерисовываем канвас
+        invalidate();   //redrawing canvas
     }
 
+    //direction search
     private int getDirection() {
 
         int dirVertical = 0;
         int dirHorizontal = 0;
 
-
-
-        Log.d(LOG_TAG, "=== Direction ===");
-        if (locationFirstX < locationSecondX) {
-            Log.d(LOG_TAG, "left");
+        if (locationFirstX < locationSecondX)
             dirVertical = 2;
-        } else if (locationFirstX > locationSecondX) {
-            Log.d(LOG_TAG, "rigth");
+        else if (locationFirstX > locationSecondX)
             dirVertical = 3;
-        } else {
-            Log.d(LOG_TAG, "0 horizont");
-            dirVertical = 0;
-        }
-
-        if (locationFirstY < locationSecondY) {
-            Log.d(LOG_TAG, "up");
-            dirHorizontal = 4;
-        } else if (locationFirstY > locationSecondY) {
-            Log.d(LOG_TAG, "down");
-            dirHorizontal = 5;
-        } else {
-            Log.d(LOG_TAG, "0 vertical");
-            dirHorizontal = 0;
-        }
-
-        if (dirVertical == 0 && dirHorizontal == 0){
-            return 1;
-        }
         else
-        {
-            if (dirVertical == 2 && dirHorizontal == 4){
+            dirVertical = 0;
+
+
+        if (locationFirstY < locationSecondY)
+            dirHorizontal = 4;
+        else if (locationFirstY > locationSecondY)
+            dirHorizontal = 5;
+        else
+            dirHorizontal = 0;
+
+
+        if (dirVertical == 0 && dirHorizontal == 0)
+            return 1;
+        else {
+            if (dirVertical == 2 && dirHorizontal == 4)
                 return 9;
-            }
-            else if (dirVertical == 2 && dirHorizontal == 5){
+            else if (dirVertical == 2 && dirHorizontal == 5)
                 return 8;
-            }
             else if (dirVertical == 2 && dirHorizontal == 0)
-            {
                 return 2;
-            }
             else if (dirVertical == 0 && dirHorizontal == 4)
-            {
                 return 4;
-            }
-            else if (dirVertical == 3 && dirHorizontal == 4){
+            else if (dirVertical == 3 && dirHorizontal == 4)
                 return 6;
-            }
-            else if (dirVertical == 3 && dirHorizontal == 5){
+            else if (dirVertical == 3 && dirHorizontal == 5)
                 return 7;
-            }
-            else if (dirVertical == 3 && dirHorizontal == 0){
+            else if (dirVertical == 3 && dirHorizontal == 0)
                 return 3;
-            }
-            else if (dirVertical == 0 && dirHorizontal == 5){
+            else if (dirVertical == 0 && dirHorizontal == 5)
                 return 5;
-            }
         }
         return 0;
     }
 
+    //get location updates
     public void getLocation() {
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(getContext());
@@ -238,26 +210,15 @@ public class PictureView extends View {
 
 
         // new Google API SDK v11 uses getFusedLocationProviderClient(this)
-        if (ActivityCompat.checkSelfPermission(getContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            Log.d(LOG_TAG, "getLocation: stopping the location service.");
-
+        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        Log.d(LOG_TAG, "getLocation: getting location information.");
-        mFusedLocationClient.requestLocationUpdates(mLocationRequestHighAccuracy,locationCallback = new LocationCallback() {
+        mFusedLocationClient.requestLocationUpdates(mLocationRequestHighAccuracy, locationCallback = new LocationCallback() {
                     @Override
                     public void onLocationResult(LocationResult locationResult) {
-
-                        Log.d(LOG_TAG, "=== Location ===");
-
                         Location location = locationResult.getLastLocation();
 
                         if (location != null) {
-
-                            Log.d(LOG_TAG, " get latitude:  " + location.getLatitude());
-                            Log.d(LOG_TAG, "get longitude:  " + location.getLongitude());
-
                             drawSteps(location.getLatitude(), location.getLongitude());
                         }
                     }
@@ -265,36 +226,26 @@ public class PictureView extends View {
                 Looper.myLooper());     // Looper.myLooper tells this to repeat forever until thread is destroyed
     }
 
-
+    //stop location
     public void pictureStop() {
-        Log.d(LOG_TAG, "************stop");
         mFusedLocationClient.removeLocationUpdates(locationCallback);
     }
 
-    //переводим dp в пиксели
+    //convert dp to pixel
     public float convertDpToPixel(float dp, Context context) {
         Resources resources = context.getResources();
         DisplayMetrics metrics = resources.getDisplayMetrics();
         return dp * (metrics.densityDpi / 160f);
     }
 
-    // Узнаем размеры экрана из ресурсов
+    //get size a display
     public void screenSizeDisplay() {
-
         DisplayMetrics displaymetrics = getResources().getDisplayMetrics();
 
         pointX = displaymetrics.widthPixels / 2;
         pointY = displaymetrics.heightPixels / 2;
 
-        Log.d(LOG_TAG, "size w = " + displaymetrics.widthPixels);
-        Log.d(LOG_TAG, "size h = " + displaymetrics.heightPixels);
-
         pointResX = pointX;
         pointResY = pointY;
-
-
-        Log.d(LOG_TAG, "pointX1 = " + pointX);
-        Log.d(LOG_TAG, "pointY1 = " + pointY);
-
     }
 }

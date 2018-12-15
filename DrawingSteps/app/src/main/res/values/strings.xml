@@ -1,9 +1,14 @@
 <resources>
     <string name="app_name">Drawing Steps</string>
-    <string name="action_settings">Settings</string>
 
-    <string name="strSnakeBar">Make a screenshot and send to your friends?</string>
-    <string name="btnSnakeBarYes">Yes</string>
+    <string name="textNameScreen">DrawingSteps</string>
+    <string name="textDialog">Do you want to make a screenshot?</string>
+
+    <string name="btnYes">Yes</string>
+    <string name="btnNo">No</string>
+    <string name="btnOK">OK</string>
+
+    <string name="dialogPermissionLocation">Location permission is required to draw your path on the phone screen or in the background. Do not worry, the coordinates of the phone are not transmitted anywhere!</string>
 
     <string name="actionBtnDevelopers">Developers</string>
     <string name="actionBtnFromDeveloper">More from developer</string>
@@ -12,6 +17,7 @@
     <string name="actionBtnPrivacyPolicy">Privacy Policy</string>
 
     <string name="toastSendMail">Message sent.</string>
+    <string name="toastScreenshot">Screenshot is saved</string>
 
     <array name="arrWorkers">
         <item>Developer Matatov Yury</item>

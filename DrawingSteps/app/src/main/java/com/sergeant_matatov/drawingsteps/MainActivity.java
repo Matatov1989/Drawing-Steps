@@ -9,7 +9,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -18,113 +17,79 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.support.v7.widget.Toolbar;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
+import android.widget.Toast;
 import static java.lang.System.exit;
-
-//import static com.sergeant_matatov.drawingsteps.R.id.fab;
 
 public class MainActivity extends AppCompatActivity {
 
-    final String LOG_TAG = "myLogs";
+//    final String LOG_TAG = "myLogs";
+
     boolean checkEnable = false;
 
     PictureView picView;
-
-    Snackbar snackbar;
-
-
-    public static final int MULTIPLE_PERMISSIONS = 1; // code you want.
-
-    String[] permissions = new String[]{
-
-            Manifest.permission.ACCESS_FINE_LOCATION,
-
-    };
+    FloatingActionButton fabBtnStartStop;
+    public static final int CODE_LOCATION = 1;
+    public static final int CODE_STORAGE = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.layout_main_activity);
 
+        //     Log.d(LOG_TAG, "---onCreate---");
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-
-        checkPermissions();
-
         picView = (PictureView) findViewById(R.id.game_view);
 
-        final FloatingActionButton fabBtnStartStop = (FloatingActionButton) findViewById(R.id.fabBtnStartStop);
+        fabBtnStartStop = (FloatingActionButton) findViewById(R.id.fabBtnStartStop);
         fabBtnStartStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
-                if (!checkEnable) {
-                    getSupportActionBar().hide();
-                    picView.getLocation();
-                    fabBtnStartStop.setImageResource(android.R.drawable.ic_media_pause);
-                    checkEnable = true;
-                } else {
-                    getSupportActionBar().show();
+                //start or stop drawing (location)
+                if (!checkEnable)
+                    checkPermissionLocation();
+                else {
                     picView.pictureStop();
-                    fabBtnStartStop.setImageResource(android.R.drawable.ic_media_play);
                     checkEnable = false;
-
-                    snackbar = Snackbar
-                            .make(view, getString(R.string.strSnakeBar), Snackbar.LENGTH_INDEFINITE)
-                            .setAction(getString(R.string.btnSnakeBarYes), snackbarOnClickListener)
-                            .setCallback(new Snackbar.Callback()
-                            {
-                                @Override
-                                public void onDismissed(Snackbar snackbar, int event) {
-                                    // do some action on dismiss
-                                    //сделали скрин
-                                    Bitmap bitmap = Screenshot.getInstance().takeScreenshotForScreen(MainActivity.this);
-                                    //сохранили скрин на sd карте
-                                    String path = Environment.getExternalStorageDirectory().toString();
-                                    String nemeP = FileUtils.getInstance().storeBitmap(bitmap, path, getApplicationContext());
-
-                                    // Create the new Intent using the 'Send' action.
-                                    Intent intent = new Intent(Intent.ACTION_SEND);
-
-                                    intent.putExtra(Intent.EXTRA_TEXT, "Drawing Steps");
-                                    intent.setType("text/plain");
-                                    // Set the MIME type
-                                    intent.setType("image/*");
-
-                                    // Create the URI from the media
-                                    File media = new File(path + "/" + nemeP);
-                                    Uri uri = Uri.fromFile(media);
-
-                                    // Add the URI to the Intent.
-                                    intent.putExtra(Intent.EXTRA_STREAM, uri);
-
-                                    // Broadcast the Intent.
-                                    startActivity(Intent.createChooser(intent, "Share to"));
-                                }
-
-                                @Override
-                                public void onShown(Snackbar snackbar) {
-                                    // do some action when snackbar is showed
-                                }
-                            });
-                    snackbar.show();
+                    fabBtnStartStop.setImageResource(android.R.drawable.ic_media_play);
+                    dialogScreenshot();
                 }
             }
         });
     }
 
-    View.OnClickListener snackbarOnClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
+    private void dialogScreenshot() {
+        AlertDialog.Builder adb = new AlertDialog.Builder(this);
+        adb.setMessage(getString(R.string.textDialog));
+        adb.setPositiveButton(R.string.btnYes, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                checkPermissionStorage();
+            }
+        });
+        adb.setNegativeButton(R.string.btnNo, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                getSupportActionBar().show();
+            }
+        });
+        adb.show();
+    }
 
-      //      snackbar.dismiss();
-        }
-    };
+    //create and save a screenshot
+    private void createScreenshot() {
+        //create a screenshot
+        Bitmap bitmap = Screenshot.getInstance().takeScreenshotForScreen(MainActivity.this);
+        //save a screenshot
+        String pathScreen = Environment.getExternalStorageDirectory().toString();
+        FileUtils.getInstance().storeBitmap(bitmap, pathScreen, getApplicationContext());
+
+        getSupportActionBar().show();
+
+        Toast.makeText(MainActivity.this, R.string.toastScreenshot, Toast.LENGTH_LONG).show();
+    }
 
     //dialog with list workers (I am and my brathers)
     //user can to write message on worker
@@ -158,17 +123,14 @@ public class MainActivity extends AppCompatActivity {
         adb.show();
     }
 
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-
         switch (item.getItemId()) {
             case R.id.action_developers:        //dialog developers
                 dialogDevelopers();
@@ -209,33 +171,85 @@ public class MainActivity extends AppCompatActivity {
         exit(0);
     }
 
+    private void checkPermissionStorage() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
 
-    public boolean checkPermissions() {
-        int result;
-        List<String> listPermissionsNeeded = new ArrayList<>();
-        for (String p : permissions) {
-            result = ContextCompat.checkSelfPermission(this, p);
-            if (result != PackageManager.PERMISSION_GRANTED) {
-                listPermissionsNeeded.add(p);
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                dialogPermissionStorage();
+
+            } else {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, CODE_STORAGE);
             }
+        } else {
+            createScreenshot();
         }
-        if (!listPermissionsNeeded.isEmpty()) {
-            ActivityCompat.requestPermissions(this, listPermissionsNeeded.toArray(new String[listPermissionsNeeded.size()]), MULTIPLE_PERMISSIONS );
-            return false;
+    }
+
+
+    private void checkPermissionLocation() {
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.ACCESS_FINE_LOCATION)) {
+                dialogPermissionLocation();
+            } else {
+                ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, CODE_LOCATION);
+            }
+        } else {
+            picView.getLocation();
+            getSupportActionBar().hide();
+            fabBtnStartStop.setImageResource(android.R.drawable.ic_media_pause);
+            checkEnable = true;
         }
-        return true;
+    }
+
+    private void dialogPermissionLocation() {
+        android.app.AlertDialog.Builder adb = new android.app.AlertDialog.Builder(this);
+        adb.setCancelable(false);
+        adb.setMessage(R.string.dialogPermissionLocation);
+        adb.setPositiveButton(R.string.btnOK, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, CODE_LOCATION);
+                dialog.dismiss();
+            }
+        });
+        adb.show();
+    }
+
+    private void dialogPermissionStorage() {
+        android.app.AlertDialog.Builder adb = new android.app.AlertDialog.Builder(this);
+        adb.setCancelable(false);
+        adb.setMessage(R.string.dialogPermissionLocation);
+        adb.setPositiveButton(R.string.btnOK, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, CODE_STORAGE);
+                dialog.dismiss();
+            }
+        });
+        adb.show();
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         switch (requestCode) {
-            case MULTIPLE_PERMISSIONS: {
+            case CODE_LOCATION: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // permissions granted.
-                    //              FLAGPERMISSION = true;
+                    picView.getLocation();
+                    getSupportActionBar().hide();
+
+                    fabBtnStartStop.setImageResource(android.R.drawable.ic_media_pause);
+                    checkEnable = true;
                 } else {
-                    // no permissions granted.
-                    //              FLAGPERMISSION = false;
+                    checkPermissionLocation();
+                }
+                return;
+            }
+
+            case CODE_STORAGE: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    createScreenshot();
+
+                } else {
+                    checkPermissionStorage();
                 }
                 return;
             }

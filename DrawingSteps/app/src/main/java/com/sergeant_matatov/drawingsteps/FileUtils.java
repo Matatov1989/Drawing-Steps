@@ -5,8 +5,6 @@ import android.graphics.Bitmap;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.format.Time;
-import android.util.Log;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -17,8 +15,6 @@ import java.io.IOException;
  */
 
 public class FileUtils {
-
-    final String LOG_TAG = "myLogs";
 
     private static FileUtils mInstance;
     FileOutputStream fOut;
@@ -47,28 +43,24 @@ public class FileUtils {
      */
 
     public String storeBitmap(Bitmap bitmap, String filePath, Context context) {
-        Log.d(LOG_TAG, "storeBitmap = " + filePath);
-        Log.d(LOG_TAG, "storeBitmap = " + context.getString(R.string.app_name));
 
         Time time = new Time();
         time.setToNow();
 
         try {
-            filePath += "/Drawing Steps/";
-            File file = new File(Environment.getExternalStorageDirectory(),"Drawing Steps");
+            filePath += "/"+context.getString(R.string.textNameScreen)+"/";     //create a path to a picture
+            File file = new File(Environment.getExternalStorageDirectory(), "Drawing Steps");
+            //   File file = new File(context.getFilesDir(), "Drawing Steps");
             file.mkdir();
-            file = new File(filePath, context.getString(R.string.app_name) + "_" + Integer.toString(time.year) + "_" + Integer.toString(time.month + 1) + "_" + Integer.toString(time.monthDay) + "_" + Integer.toString(time.hour) + "_" + Integer.toString(time.minute) + ".jpg"); // создать уникальное имя для файла основываясь на дате сохранения
+            file = new File(filePath, context.getString(R.string.textNameScreen) + "_" + Integer.toString(time.year) + "_" + Integer.toString(time.month + 1) + "_" + Integer.toString(time.monthDay) + "_" + Integer.toString(time.hour) + "_" + Integer.toString(time.minute) + ".jpg"); // создать уникальное имя для файла основываясь на дате сохранения
 
             fOut = new FileOutputStream(file);
 
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fOut); // сохранять картинку в jpeg-формате с 85% сжатия.
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fOut);  //save a picture to .jpeg with 85% of the compress.
             fOut.flush();
             fOut.close();
             adress = file.getName();
-            MediaStore.Images.Media.insertImage(context.getContentResolver(), file.getAbsolutePath(), file.getName(), file.getName()); // регистрация в фотоальбоме
-
-          //  Log.d(LOG_TAG, "11storeBitmap = " + MediaStore.Images.Media.insertImage(context.getContentResolver(), file.getAbsolutePath(), file.getName(), file.getName()).toString()); // регистрация в фотоальбоме
-
+            MediaStore.Images.Media.insertImage(context.getContentResolver(), bitmap, file.getName(), file.getName());  //photo album registration
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {

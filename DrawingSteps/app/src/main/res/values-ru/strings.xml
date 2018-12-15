@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <string name="app_name">Ходули</string>
-    <string name="action_settings">Settings</string>
 
-    <string name="strSnakeBar">Сделать скрин и отправить друзьям?</string>
-    <string name="btnSnakeBarYes">Да</string>
+    <string name="textNameScreen">DrawingSteps</string>
+    <string name="textDialog">Желаешь сделать Screenshot своего рисунка, который ты натоптал?</string>
+
+    <string name="btnYes">Да</string>
+    <string name="btnNo">Нет</string>
+    <string name="btnOK">OK</string>
+
+    <string name="dialogPermissionLocation">Разрешение на местоположение необходимо для рисования Вашего пройдённого пути на экране телефона или в фоновом режиме. Не беспокойтесь, координаты телефона никуда не передаются!</string>
 
     <string name="actionBtnDevelopers">Разработчики</string>
     <string name="actionBtnFromDeveloper">Ещё от разработчиков</string>
@@ -14,6 +18,7 @@
     <string name="actionBtnPrivacyPolicy">Политика Конфиденциальности</string>
 
     <string name="toastSendMail">Сообщение отправлено.</string>
+    <string name="toastScreenshot">Скриншот сохранен</string>
 
     <array name="arrWorkers">
         <item>Разработчик Мататов Юрий</item>

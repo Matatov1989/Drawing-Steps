@@ -2,7 +2,6 @@ package com.sergeant_matatov.drawingsteps;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
-import android.util.Log;
 import android.view.View;
 
 /**
@@ -10,8 +9,6 @@ import android.view.View;
  */
 
 public class Screenshot {
-
-    final String LOG_TAG = "myLogs";
 
     private static Screenshot mInstance;
 
@@ -49,5 +46,4 @@ public class Screenshot {
     public Bitmap takeScreenshotForScreen(Activity activity) {
         return takeScreenshotForView(activity.getWindow().getDecorView().getRootView());
     }
-
 }
